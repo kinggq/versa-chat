@@ -6,13 +6,36 @@
     @dragleave.prevent="onDragLeave"
     @drop.prevent="onDrop"
   >
+    <div v-if="replyingQuote" class="vim-reply-bar">
+      <span class="vim-reply-label">引用</span>
+      <span class="vim-reply-preview">{{ replyingQuote.preview || "消息" }}</span>
+      <button type="button" class="vim-reply-close" aria-label="取消" @click="clearReply">×</button>
+    </div>
     <div class="tools">
+      <button
+        v-if="showImageButton"
+        type="button"
+        class="vim-tool-btn"
+        title="发送图片"
+        aria-label="发送图片"
+        @click="triggerImageInput"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+      </button>
       <slot name="input-tools" />
     </div>
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept="image/*"
+      class="vim-file-input-hidden"
+      multiple
+      @change="onFileSelect"
+    />
     <textarea
       v-model="text"
       class="input"
-      placeholder="输入消息，Ctrl+Enter 发送；可粘贴图片或拖拽文件"
+      :placeholder="placeholder"
       @keydown="onKeydown"
       @paste="onPaste"
     />
@@ -23,23 +46,65 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import type { VIMInputFilesPayload } from "../types";
+import { computed, ref } from "vue";
+import type { VIMInputFilesPayload, VIMQuoteRef, VIMSendPayload } from "../types";
+
+const props = withDefaults(
+  defineProps<{
+    /** Show image upload button in toolbar */
+    showImageButton?: boolean;
+    /** Input placeholder */
+    placeholder?: string;
+    /** Draft text (v-model) */
+    modelValue?: string;
+    /** 引用回复时的引用信息 */
+    replyingQuote?: VIMQuoteRef | null;
+  }>(),
+  { showImageButton: true, placeholder: "输入消息，Ctrl+Enter 发送；可粘贴图片或拖拽文件", modelValue: "", replyingQuote: null }
+);
 
 const emit = defineEmits<{
-  (event: "send", text: string): void;
+  (event: "send", payload: VIMSendPayload): void;
   (event: "input-files", payload: VIMInputFilesPayload): void;
+  (event: "update:modelValue", v: string): void;
+  (event: "cancel-reply"): void;
 }>();
 
-const text = ref("");
+const text = computed({
+  get: () => props.modelValue ?? "",
+  set: (v: string) => emit("update:modelValue", v)
+});
 const dragOver = ref(false);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+
+function triggerImageInput(): void {
+  fileInputRef.value?.click();
+}
+
+function onFileSelect(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  const files = input.files;
+  if (files?.length) {
+    emit("input-files", { files: Array.from(files), source: "drop" });
+  }
+  input.value = "";
+}
+function clearReply(): void {
+  emit("cancel-reply");
+}
+
 function submit(): void {
-  const payload = text.value.trim();
-  if (!payload) {
+  const textVal = text.value.trim();
+  if (!textVal) {
     return;
   }
+  const payload: VIMSendPayload = {
+    text: textVal,
+    quote: props.replyingQuote || undefined
+  };
   emit("send", payload);
-  text.value = "";
+  emit("update:modelValue", "");
+  emit("cancel-reply");
 }
 
 function onKeydown(event: KeyboardEvent): void {
@@ -108,8 +173,75 @@ function onDrop(event: DragEvent): void {
   background: #fafafa;
 }
 
-.tools {
+.vim-reply-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 10px;
+  background: var(--vim-quote-bg, #f0f0f0);
+  border-bottom: 1px solid var(--vim-quote-border, #d9d9d9);
+  font-size: 12px;
+}
+
+.vim-reply-label {
+  color: var(--vim-muted-text-color);
+  flex-shrink: 0;
+}
+
+.vim-reply-preview {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vim-reply-close {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--vim-muted-text-color);
+  border-radius: 4px;
+}
+
+.vim-reply-close:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+}
+
+.vim-tool-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--vim-muted-text-color);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.vim-tool-btn:hover {
+  background: var(--vim-bg-color);
+  color: var(--vim-primary-color);
+}
+
+.vim-file-input-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .input {

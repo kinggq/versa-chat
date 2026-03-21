@@ -1,12 +1,12 @@
 <template>
-  <div ref="wrapRef" class="vim-image-message-wrap">
+  <div ref="wrapRef" class="vim-image-message-wrap" @click="onClick">
     <div v-if="!loaded" class="vim-image-placeholder">
       <span class="vim-image-placeholder-text">图片</span>
     </div>
     <img
       v-show="loaded"
       ref="imgRef"
-      class="vim-image-message"
+      class="vim-image-message vim-image-clickable"
       :src="shouldLoad ? resolvedSrc : undefined"
       alt="image message"
       @load="loaded = true"
@@ -19,7 +19,16 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 
 const props = defineProps<{
   content: unknown;
+  message?: { id: string };
 }>();
+
+const emit = defineEmits<{
+  (event: "click-image", url: string): void;
+}>();
+
+function onClick(): void {
+  if (resolvedSrc.value) emit("click-image", resolvedSrc.value);
+}
 
 const wrapRef = ref<HTMLElement | null>(null);
 const imgRef = ref<HTMLImageElement | null>(null);
@@ -93,5 +102,9 @@ onUnmounted(() => {
   max-width: 220px;
   border-radius: 8px;
   object-fit: cover;
+}
+
+.vim-image-clickable {
+  cursor: pointer;
 }
 </style>

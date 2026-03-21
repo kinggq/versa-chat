@@ -1,4 +1,5 @@
 import VersatileIM from "./components/VersatileIM.vue";
+import VimDialog from "./components/VimDialog.vue";
 import "./styles/vars.css";
 
 export type {
@@ -9,8 +10,11 @@ export type {
   VIMMessageTypeMap,
   VIMMode,
   VIMQuoteRef,
+  VIMSendPayload,
   VIMSessionItem,
+  VIMSessionMenuItem,
+  VIMSidebarMenuItem,
   VIMTheme
 } from "./types";
 
-export { VersatileIM };
+export { VersatileIM, VimDialog };

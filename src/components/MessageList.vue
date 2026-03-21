@@ -1,7 +1,12 @@
 <template>
   <div ref="listRoot" class="vim-message-list" @scroll="onScroll">
+    <div v-if="!messages.length" class="vim-message-empty">
+      <slot name="empty">
+        <span class="vim-message-empty-text">{{ emptyText }}</span>
+      </slot>
+    </div>
     <div
-      v-if="virtualScroll"
+      v-else-if="virtualScroll"
       class="vim-virtual-inner"
       :style="virtualInnerStyle"
     >
@@ -35,6 +40,7 @@
               :is="resolveMessageRenderer(msg.type)"
               :content="msg.content"
               :message="msg"
+              @click-image="(url: string) => emit('click-image', { url, message: msg })"
             />
           </slot>
         </VimMessageBubble>
@@ -79,6 +85,7 @@
               :is="resolveMessageRenderer(msg.type)"
               :content="msg.content"
               :message="msg"
+              @click-image="(url: string) => emit('click-image', { url, message: msg })"
             />
           </slot>
         </VimMessageBubble>
@@ -119,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import type { Component } from "vue";
 import type { VIMMenuItem, VIMMessage, VIMMessageTypeMap, VIMQuoteRef } from "../types";
 import VimAvatar from "./VimAvatar.vue";
@@ -141,6 +148,8 @@ const props = withDefaults(
     virtualScrollThreshold?: number;
     /** Estimated row height for virtual scroll (px). Default 88. */
     virtualRowHeight?: number;
+    /** Text when messages is empty */
+    emptyText?: string;
   }>(),
   {
     showAvatar: true,
@@ -150,7 +159,8 @@ const props = withDefaults(
     enableMessageMenu: true,
     menuItems: undefined,
     virtualScrollThreshold: 100,
-    virtualRowHeight: 88
+    virtualRowHeight: 88,
+    emptyText: "暂无消息"
   }
 );
 
@@ -159,6 +169,7 @@ const emit = defineEmits<{
   (event: "click-avatar", message: VIMMessage): void;
   (event: "menu-click", payload: { action: string; message: VIMMessage }): void;
   (event: "quote-locate", payload: { quotedId: string; message?: VIMMessage }): void;
+  (event: "click-image", payload: { url: string; message: VIMMessage }): void;
 }>();
 
 const listRoot = ref<HTMLElement | null>(null);
@@ -250,11 +261,13 @@ function updateContainerHeight(): void {
 function defaultMenuItemsFor(message: VIMMessage): VIMMenuItem[] {
   return [
     { key: "copy", label: "复制", visible: () => canCopyMessage(message) },
+    { key: "quote", label: "引用回复", visible: () => true },
     {
       key: "recall",
       label: "撤回",
       visible: (m) => m.sender === "self" && props.enableRecall
     },
+    { key: "retry", label: "重新发送", visible: (m) => !!m.failed },
     { key: "delete", label: "删除", visible: () => true }
   ];
 }
@@ -332,11 +345,35 @@ function scrollToMessage(id: string): void {
   }
 }
 
+function scrollToBottom(): void {
+  const root = listRoot.value;
+  if (!root) return;
+  root.scrollTop = root.scrollHeight - root.clientHeight;
+}
+
 function onDocClick(): void {
   if (menuOpen.value) closeMenu();
 }
 
 let resizeObserver: ResizeObserver | null = null;
+
+watch(
+  () => {
+    const last = props.messages[props.messages.length - 1];
+    return last ? { id: last.id, sender: last.sender, type: last.type } : null;
+  },
+  (curr, prev) => {
+    if (curr && curr.sender === "self" && (!prev || curr.id !== prev.id)) {
+      nextTick(() => scrollToBottom());
+      if (curr.type === "image") {
+        nextTick(() => {
+          scrollToBottom();
+          [100, 300, 600].forEach((ms) => setTimeout(() => scrollToBottom(), ms));
+        });
+      }
+    }
+  }
+);
 
 onMounted(() => {
   document.addEventListener("click", onDocClick);
@@ -351,7 +388,8 @@ onUnmounted(() => {
 });
 
 defineExpose({
-  scrollToMessage
+  scrollToMessage,
+  scrollToBottom
 });
 </script>
 
@@ -361,6 +399,18 @@ defineExpose({
   padding: 12px;
   overflow-y: auto;
   background: var(--vim-bg-color);
+}
+
+.vim-message-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.vim-message-empty-text {
+  font-size: 14px;
+  color: var(--vim-muted-text-color);
 }
 
 .time-divider {

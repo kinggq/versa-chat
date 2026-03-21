@@ -18,6 +18,7 @@ export default defineConfig({
         text: "Guide",
         items: [
           { text: "Introduction", link: "/guide/introduction" },
+          { text: "Usage", link: "/guide/usage" },
           { text: "Theme", link: "/guide/theme" },
           { text: "Custom Message Types", link: "/guide/custom-message" },
         ],
@@ -29,6 +30,7 @@ export default defineConfig({
           { text: "MessageList", link: "/components/message-list" },
           { text: "IMInput", link: "/components/im-input" },
           { text: "SessionList", link: "/components/session-list" },
+          { text: "VimDialog", link: "/components/vim-dialog" },
         ],
       },
     ],
