@@ -21,6 +21,8 @@
         :enable-recall="resolvedConfig.enableRecall"
         :enable-message-menu="resolvedConfig.enableMessageMenu"
         :menu-items="resolvedConfig.menuItems"
+        :virtual-scroll-threshold="resolvedConfig.virtualScrollThreshold"
+        :virtual-row-height="resolvedConfig.virtualRowHeight"
         @pull-history="$emit('pull-history')"
         @click-avatar="$emit('click-avatar', $event)"
         @menu-click="$emit('menu-click', $event)"
@@ -92,7 +94,9 @@ const resolvedConfig = computed(() => ({
   enableRecall: props.config.enableRecall ?? true,
   mobileBreakpoint: props.config.mobileBreakpoint ?? 768,
   enableMessageMenu: props.config.enableMessageMenu ?? true,
-  menuItems: props.config.menuItems
+  menuItems: props.config.menuItems,
+  virtualScrollThreshold: props.config.virtualScrollThreshold ?? 100,
+  virtualRowHeight: props.config.virtualRowHeight ?? 88
 }));
 
 const mode = computed(() => resolvedConfig.value.mode);

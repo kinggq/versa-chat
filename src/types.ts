@@ -44,6 +44,10 @@ export interface VIMConfig {
   showAvatar?: boolean;
   enableRecall?: boolean;
   mobileBreakpoint?: number;
+  /** 消息数超过此值时启用虚拟滚动，0 表示禁用。默认 100 */
+  virtualScrollThreshold?: number;
+  /** 虚拟滚动时预估行高 (px)。默认 88 */
+  virtualRowHeight?: number;
   /** 是否启用消息右键菜单（复制/撤回/删除等） */
   enableMessageMenu?: boolean;
   /**

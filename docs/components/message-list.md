@@ -13,6 +13,8 @@ Message list component. Supports timeline (timestamp every 5+ min), quote reply,
 | `enableRecall` | `boolean` | `true` | Enable recall in menu | 启用撤回 |
 | `enableMessageMenu` | `boolean` | `true` | Enable context menu | 启用右键菜单 |
 | `customMessageTypes` | `VIMMessageTypeMap` | `{}` | Custom type components | 自定义消息类型 |
+| `virtualScrollThreshold` | `number` | `100` | Enable virtual scroll when messages >= this. 0 to disable | 消息数超过此值启用虚拟滚动 |
+| `virtualRowHeight` | `number` | `88` | Estimated row height for virtual scroll (px) | 虚拟滚动预估行高 |
 
 ## Events
 

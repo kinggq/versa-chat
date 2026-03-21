@@ -41,7 +41,7 @@ import "vue-versatile-im/dist/style.css";
 | `messages` | `VIMMessage[]` | required | Current session messages | 当前会话消息列表 |
 | `activeSessionId` | `string` | `""` | Active session ID | 当前选中会话 ID |
 | `theme` | `VIMTheme` | `{}` | Theme overrides | 主题覆盖 |
-| `config` | `VIMConfig` | `{}` | mode, showAvatar, enableRecall, etc. | 配置项 |
+| `config` | `VIMConfig` | `{}` | mode, showAvatar, enableRecall, virtualScrollThreshold, etc. | 配置项 |
 | `messageTypeMap` | `VIMMessageTypeMap` | `{}` | Custom message type components | 自定义消息类型映射 |
 
 ## Events

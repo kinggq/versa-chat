@@ -128,7 +128,7 @@ function onSend(text: string): void {
     sending: true,
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2"
   });
-  const last = messages.value.at(-1);
+  const last = messages.value[messages.value.length - 1];
   if (!last) {
     return;
   }
@@ -184,7 +184,8 @@ function onQuoteLocate(payload: { quotedId: string }): void {
 }
 
 function scrollToFirst(): void {
-  imRef.value?.scrollToMessage("m-0");
+  const first = messages.value[0];
+  if (first) imRef.value?.scrollToMessage(first.id);
 }
 
 function toggleMode(): void {

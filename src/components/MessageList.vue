@@ -1,6 +1,55 @@
 <template>
   <div ref="listRoot" class="vim-message-list" @scroll="onScroll">
-    <template v-for="(msg, index) in messages" :key="msg.id">
+    <div
+      v-if="virtualScroll"
+      class="vim-virtual-inner"
+      :style="virtualInnerStyle"
+    >
+      <template v-for="(msg, index) in visibleMessages" :key="msg.id">
+        <div v-if="showTimeDivider(index)" class="time-divider">
+          {{ formatTime(msg.timestamp) }}
+        </div>
+
+        <div
+          class="message-row"
+          :class="msg.sender === 'self' ? 'is-self' : 'is-other'"
+          :data-message-id="msg.id"
+        >
+        <VimAvatar
+          v-if="showAvatar && msg.sender === 'other'"
+          :src="msg.avatar"
+          :show-placeholder="!msg.avatar"
+          @click="$emit('click-avatar', msg)"
+        />
+
+        <VimMessageBubble
+          :is-self="msg.sender === 'self'"
+          :quote="msg.quote"
+          :sending="msg.sending"
+          :failed="msg.failed"
+          @quote-click="onQuoteClick"
+          @contextmenu="openMenu($event, msg)"
+        >
+          <slot name="message-item" :message="msg">
+            <component
+              :is="resolveMessageRenderer(msg.type)"
+              :content="msg.content"
+              :message="msg"
+            />
+          </slot>
+        </VimMessageBubble>
+
+        <VimAvatar
+          v-if="showAvatar && msg.sender === 'self'"
+          :src="msg.avatar"
+          :show-placeholder="!msg.avatar"
+          @click="$emit('click-avatar', msg)"
+        />
+      </div>
+    </template>
+    </div>
+
+    <template v-else v-for="(msg, index) in messages" :key="msg.id">
       <div v-if="showTimeDivider(index)" class="time-divider">
         {{ formatTime(msg.timestamp) }}
       </div>
@@ -10,53 +59,36 @@
         :class="msg.sender === 'self' ? 'is-self' : 'is-other'"
         :data-message-id="msg.id"
       >
-        <img
-          v-if="showAvatar && msg.sender === 'other' && msg.avatar"
-          class="avatar"
+        <VimAvatar
+          v-if="showAvatar && msg.sender === 'other'"
           :src="msg.avatar"
-          alt="avatar"
+          :show-placeholder="!msg.avatar"
           @click="$emit('click-avatar', msg)"
         />
-        <div v-else-if="showAvatar && msg.sender === 'other'" class="avatar placeholder" />
 
-        <div class="bubble-column">
-          <button
-            v-if="msg.quote"
-            type="button"
-            class="quote-bar"
-            @click="onQuoteClick(msg.quote!)"
-          >
-            <span class="quote-label">引用</span>
-            <span class="quote-preview">{{ msg.quote.preview || "消息" }}</span>
-          </button>
+        <VimMessageBubble
+          :is-self="msg.sender === 'self'"
+          :quote="msg.quote"
+          :sending="msg.sending"
+          :failed="msg.failed"
+          @quote-click="onQuoteClick"
+          @contextmenu="openMenu($event, msg)"
+        >
+          <slot name="message-item" :message="msg">
+            <component
+              :is="resolveMessageRenderer(msg.type)"
+              :content="msg.content"
+              :message="msg"
+            />
+          </slot>
+        </VimMessageBubble>
 
-          <div
-            class="bubble"
-            @contextmenu.prevent="openMenu($event, msg)"
-          >
-            <slot name="message-item" :message="msg">
-              <component
-                :is="resolveMessageRenderer(msg.type)"
-                :content="msg.content"
-                :message="msg"
-              />
-            </slot>
-          </div>
-
-          <div v-if="msg.sender === 'self' && (msg.sending || msg.failed)" class="send-status">
-            <span v-if="msg.sending" class="status sending">发送中…</span>
-            <span v-if="msg.failed" class="status failed">发送失败</span>
-          </div>
-        </div>
-
-        <img
-          v-if="showAvatar && msg.sender === 'self' && msg.avatar"
-          class="avatar"
+        <VimAvatar
+          v-if="showAvatar && msg.sender === 'self'"
           :src="msg.avatar"
-          alt="avatar"
+          :show-placeholder="!msg.avatar"
           @click="$emit('click-avatar', msg)"
         />
-        <div v-else-if="showAvatar && msg.sender === 'self'" class="avatar placeholder" />
       </div>
     </template>
 
@@ -87,9 +119,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import type { Component } from "vue";
 import type { VIMMenuItem, VIMMessage, VIMMessageTypeMap, VIMQuoteRef } from "../types";
+import VimAvatar from "./VimAvatar.vue";
+import VimMessageBubble from "./VimMessageBubble.vue";
 import TextMessage from "./message-types/TextMessage.vue";
 import ImageMessage from "./message-types/ImageMessage.vue";
 import FileMessage from "./message-types/FileMessage.vue";
@@ -103,6 +137,10 @@ const props = withDefaults(
     enableRecall?: boolean;
     enableMessageMenu?: boolean;
     menuItems?: VIMMenuItem[];
+    /** Enable virtual scroll when messages exceed threshold. Default 100. */
+    virtualScrollThreshold?: number;
+    /** Estimated row height for virtual scroll (px). Default 88. */
+    virtualRowHeight?: number;
   }>(),
   {
     showAvatar: true,
@@ -110,7 +148,9 @@ const props = withDefaults(
     customMessageTypes: () => ({}),
     enableRecall: true,
     enableMessageMenu: true,
-    menuItems: undefined
+    menuItems: undefined,
+    virtualScrollThreshold: 100,
+    virtualRowHeight: 88
   }
 );
 
@@ -122,10 +162,16 @@ const emit = defineEmits<{
 }>();
 
 const listRoot = ref<HTMLElement | null>(null);
+const scrollTop = ref(0);
+const containerHeight = ref(400);
 
 const menuOpen = ref(false);
 const menuPosition = ref<{ left: number; top: number } | null>(null);
 const activeMenuMessage = ref<VIMMessage | null>(null);
+
+const virtualScroll = computed(
+  () => props.messages.length >= props.virtualScrollThreshold
+);
 
 const builtInTypeMap = computed<Record<string, Component>>(() => ({
   text: TextMessage,
@@ -142,12 +188,44 @@ function resolveMessageRenderer(type: string): Component {
   return mergedTypeMap.value[type] ?? TextMessage;
 }
 
-function showTimeDivider(index: number): boolean {
-  if (index === 0) {
-    return true;
+const visibleRange = computed(() => {
+  if (!virtualScroll.value) {
+    return { start: 0, end: props.messages.length };
   }
-  const current = props.messages[index];
-  const prev = props.messages[index - 1];
+  const buffer = 5;
+  const start = Math.max(
+    0,
+    Math.floor(scrollTop.value / props.virtualRowHeight) - buffer
+  );
+  const visibleCount = Math.ceil(containerHeight.value / props.virtualRowHeight) + buffer * 2;
+  const end = Math.min(props.messages.length, start + visibleCount);
+  return { start, end };
+});
+
+const visibleMessages = computed(() => {
+  const { start, end } = visibleRange.value;
+  return props.messages.slice(start, end);
+});
+
+const totalHeight = computed(() => {
+  if (!virtualScroll.value) return 0;
+  return props.messages.length * props.virtualRowHeight;
+});
+
+const virtualInnerStyle = computed(() => {
+  if (!virtualScroll.value) return {};
+  const { start } = visibleRange.value;
+  return {
+    minHeight: `${totalHeight.value}px`,
+    paddingTop: `${start * props.virtualRowHeight}px`
+  };
+});
+
+function showTimeDivider(index: number): boolean {
+  const actualIndex = visibleRange.value.start + index;
+  if (actualIndex === 0) return true;
+  const current = props.messages[actualIndex];
+  const prev = props.messages[actualIndex - 1];
   return current.timestamp - prev.timestamp > 5 * 60 * 1000;
 }
 
@@ -157,8 +235,15 @@ function formatTime(ts: number): string {
 
 function onScroll(event: Event): void {
   const target = event.target as HTMLElement;
+  scrollTop.value = target.scrollTop;
   if (target.scrollTop <= 20) {
     emit("pull-history");
+  }
+}
+
+function updateContainerHeight(): void {
+  if (listRoot.value) {
+    containerHeight.value = listRoot.value.clientHeight;
   }
 }
 
@@ -240,9 +325,7 @@ function escapeAttr(value: string): string {
 
 function scrollToMessage(id: string): void {
   const root = listRoot.value;
-  if (!root) {
-    return;
-  }
+  if (!root) return;
   const el = root.querySelector(`[data-message-id="${escapeAttr(id)}"]`);
   if (el instanceof HTMLElement) {
     el.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -250,17 +333,21 @@ function scrollToMessage(id: string): void {
 }
 
 function onDocClick(): void {
-  if (menuOpen.value) {
-    closeMenu();
-  }
+  if (menuOpen.value) closeMenu();
 }
+
+let resizeObserver: ResizeObserver | null = null;
 
 onMounted(() => {
   document.addEventListener("click", onDocClick);
+  updateContainerHeight();
+  resizeObserver = new ResizeObserver(updateContainerHeight);
+  if (listRoot.value) resizeObserver.observe(listRoot.value);
 });
 
 onUnmounted(() => {
   document.removeEventListener("click", onDocClick);
+  resizeObserver?.disconnect();
 });
 
 defineExpose({
@@ -300,84 +387,8 @@ defineExpose({
   flex-direction: row;
 }
 
-.avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.avatar.placeholder {
-  visibility: hidden;
-}
-
-.bubble-column {
-  display: flex;
-  flex-direction: column;
-  align-items: inherit;
-  max-width: min(60%, 500px);
-}
-
-.is-self .bubble-column {
-  align-items: flex-end;
-}
-
-.is-other .bubble-column {
-  align-items: flex-start;
-}
-
-.quote-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  margin-bottom: 4px;
-  padding: 4px 8px;
-  border: 1px solid var(--vim-quote-border);
-  border-radius: 4px;
-  background: var(--vim-quote-bg);
-  font-size: 12px;
-  color: var(--vim-muted-text-color);
-  cursor: pointer;
-  text-align: left;
-}
-
-.quote-label {
-  flex-shrink: 0;
-  color: var(--vim-primary-color);
-}
-
-.quote-preview {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bubble {
-  padding: 8px 10px;
-  border-radius: var(--vim-border-radius);
-  background: var(--vim-bubble-left-bg);
-  color: var(--vim-text-color);
-  word-break: break-word;
-}
-
-.is-self .bubble {
-  background: var(--vim-bubble-right-bg);
-}
-
-.send-status {
-  margin-top: 4px;
-  font-size: 12px;
-}
-
-.status.sending {
-  color: var(--vim-status-sending);
-}
-
-.status.failed {
-  color: var(--vim-status-failed);
+.vim-virtual-inner {
+  box-sizing: border-box;
 }
 
 :global(.vim-context-menu-backdrop) {

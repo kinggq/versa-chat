@@ -11,6 +11,13 @@ beforeEach(() => {
       writeText: vi.fn().mockResolvedValue(undefined)
     }
   });
+  if (typeof ResizeObserver === "undefined") {
+    global.ResizeObserver = vi.fn().mockImplementation(() => ({
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+      unobserve: vi.fn()
+    }));
+  }
 });
 
 
@@ -101,7 +108,7 @@ describe("MessageList", () => {
       props: { messages }
     });
 
-    await wrapper.find(".quote-bar").trigger("click");
+    await wrapper.find(".vim-quote-bar").trigger("click");
 
     expect(wrapper.emitted("quote-locate")?.[0]?.[0]).toEqual({
       quotedId: "m-0",
@@ -153,7 +160,7 @@ describe("MessageList", () => {
       attachTo: document.body
     });
 
-    await wrapper.find(".bubble").trigger("contextmenu", {
+    await wrapper.find(".vim-bubble").trigger("contextmenu", {
       clientX: 40,
       clientY: 40
     });

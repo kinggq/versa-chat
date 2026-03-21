@@ -8,7 +8,7 @@
       type="button"
       @click="$emit('select', item.id)"
     >
-      <img v-if="item.avatar" :src="item.avatar" class="avatar" alt="avatar" />
+      <VimAvatar v-if="item.avatar" :src="item.avatar" :size="36" alt="avatar" />
       <div class="meta">
         <div class="title">{{ item.title }}</div>
         <div class="subtitle">{{ item.subtitle }}</div>
@@ -19,6 +19,7 @@
 </template>
 
 <script setup lang="ts">
+import VimAvatar from "./VimAvatar.vue";
 import type { VIMSessionItem } from "../types";
 
 defineProps<{
@@ -56,12 +57,6 @@ defineEmits<{
   background: #f7f7f7;
 }
 
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-}
 
 .meta {
   flex: 1;
