@@ -1,0 +1,39 @@
+{
+  "name": "vue-versatile-im",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A lightweight, zero-dependency, customizable IM UI library for Vue 3",
+  "main": "dist/vue-versatile-im.umd.cjs",
+  "module": "dist/vue-versatile-im.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -p tsconfig.build.json && BUILD_LIB=true vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit",
+    "playground": "vite --open",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "docs:dev": "npx vitepress dev docs",
+    "docs:build": "npx vitepress build docs",
+    "docs:preview": "npx vitepress preview docs"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.9.2",
+    "vitepress": "^1.6.3",
+    "vite": "^5.4.19",
+    "vitest": "^2.1.8",
+    "vue": "^3.5.21",
+    "vue-tsc": "^2.1.6"
+  }
+}
