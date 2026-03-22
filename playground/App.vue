@@ -14,7 +14,9 @@
       </button>
     </div>
     <p class="hint">
-      点击好友切换会话；右键消息可打开菜单（含引用回复、重新发送）；带「引用」的气泡可点击跳转；输入区支持粘贴图片 / 拖拽文件；草稿按会话保存；点击图片可预览；头部右侧可添加视频/语音按钮。
+      <strong>新功能演示：</strong>「客服小助手」为<strong>置顶</strong>会话（📌 在列表最前）；发送消息后可见<strong>送达状态</strong>（✓ → ✓✓ → 蓝色已读）；开启「模拟对方输入中」可看到自定义<strong>正在输入</strong>文案；右键消息<strong>转发</strong>；右键会话<strong>置顶聊天</strong>切换置顶。
+      <br />
+      另：引用回复、草稿、头部视频/语音、图片预览等同上。
     </p>
     <div class="panel">
       <VersatileIM
@@ -104,7 +106,8 @@ const sessions = ref<VIMSessionItem[]>([
     title: "客服小助手",
     subtitle: "您好，有什么可以帮您？",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2",
-    lastMessageTime: Date.now() - 200000
+    lastMessageTime: Date.now() - 200000,
+    pinned: true
   },
   {
     id: "s-3",
@@ -135,13 +138,31 @@ const messagesBySession = ref<Record<string, VIMMessage[]>>({
   "s-1": [
     { id: "m-0", sender: "other", type: "text", content: "这是第一条，可被引用定位", timestamp: Date.now() - 900000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=1" },
     { id: "m-1", sender: "other", type: "text", content: "欢迎使用 Vue Versatile IM", timestamp: Date.now() - 600000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=1" },
-    { id: "m-2", sender: "self", type: "text", content: "支持自定义消息类型吗？", timestamp: Date.now() - 500000, sending: false, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2" },
+    {
+      id: "m-2",
+      sender: "self",
+      type: "text",
+      content: "支持自定义消息类型吗？",
+      timestamp: Date.now() - 500000,
+      sending: false,
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2",
+      deliveryStatus: "read"
+    },
     { id: "m-3", sender: "other", type: "text", content: "这是一条带引用的回复", timestamp: Date.now() - 400000, quote: { id: "m-2", preview: "支持自定义消息类型吗？", sender: "self" }, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=1" },
     { id: "m-4", sender: "other", type: "vote", content: { title: "今晚吃什么", options: ["火锅", "烧烤"] }, timestamp: Date.now() - 100000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=1" }
   ],
   "s-2": [
     { id: "s2-1", sender: "other", type: "text", content: "您好，有什么可以帮您？", timestamp: Date.now() - 300000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2" },
-    { id: "s2-2", sender: "self", type: "text", content: "我想咨询一下", timestamp: Date.now() - 200000, sending: false, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2" }
+    {
+      id: "s2-2",
+      sender: "self",
+      type: "text",
+      content: "我想咨询一下",
+      timestamp: Date.now() - 200000,
+      sending: false,
+      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2",
+      deliveryStatus: "delivered"
+    }
   ],
   "s-3": [
     { id: "s3-1", sender: "other", type: "text", content: "关于虚拟滚动的实现，大家有什么建议？", timestamp: Date.now() - 400000, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=3" }
@@ -161,7 +182,9 @@ const config = reactive<VIMConfig>({
     { key: "me", label: "我" }
   ],
   sidebarMenuBottomItems: [{ key: "settings", label: "设置" }],
-  mainPaneKeys: ["me"]
+  mainPaneKeys: ["me"],
+  /** 自定义「正在输入」文案（需 typing=true） */
+  typingText: "对方正在输入一条消息…"
 });
 
 const theme = reactive({
@@ -214,6 +237,24 @@ function updateMessageInList(list: VIMMessage[], id: string, updates: Partial<VI
   }
 }
 
+/** 发送成功后演示：已发送 → 已送达 → 已读（与失败模式互斥） */
+function simulateDeliveryPipeline(list: VIMMessage[], id: string): void {
+  window.setTimeout(() => {
+    if (simulateFailNext.value) {
+      updateMessageInList(list, id, { sending: false, failed: true });
+      simulateFailNext.value = false;
+      return;
+    }
+    updateMessageInList(list, id, { sending: false, failed: undefined, deliveryStatus: "sent" });
+    window.setTimeout(() => {
+      updateMessageInList(list, id, { deliveryStatus: "delivered" });
+    }, 450);
+    window.setTimeout(() => {
+      updateMessageInList(list, id, { deliveryStatus: "read" });
+    }, 950);
+  }, 600);
+}
+
 function onSend(payload: VIMSendPayload): void {
   const list = getMessages();
   const id = `m-${Date.now()}`;
@@ -231,13 +272,7 @@ function onSend(payload: VIMSendPayload): void {
   const preview = typeof msg.content === "string" ? msg.content : "[消息]";
   updateActiveSessionPreview(preview);
   replyingTo.value = null;
-  window.setTimeout(() => {
-    updateMessageInList(list, id, {
-      sending: false,
-      failed: simulateFailNext.value ? true : undefined
-    });
-    if (simulateFailNext.value) simulateFailNext.value = false;
-  }, 600);
+  simulateDeliveryPipeline(list, id);
 }
 
 function onInputFiles(payload: VIMInputFilesPayload): void {
@@ -257,13 +292,7 @@ function onInputFiles(payload: VIMInputFilesPayload): void {
     };
     list.push(msg);
     updateActiveSessionPreview("[图片]");
-    window.setTimeout(() => {
-      updateMessageInList(list, id, {
-        sending: false,
-        failed: simulateFailNext.value ? true : undefined
-      });
-      if (simulateFailNext.value) simulateFailNext.value = false;
-    }, 600);
+    simulateDeliveryPipeline(list, id);
     return;
   }
   const names = payload.files.map((f) => f.name).join(", ");
@@ -296,14 +325,20 @@ function onMenuClick(payload: { action: string; message: VIMMessage }): void {
     replyingTo.value = payload.message;
     return;
   }
+  if (payload.action === "forward") {
+    const preview =
+      payload.message.type === "text" && typeof payload.message.content === "string"
+        ? payload.message.content
+        : `[${payload.message.type}]`;
+    window.alert(`转发示例：\n${preview}\n\n（业务侧可打开联系人选择器）`);
+    return;
+  }
   if (payload.action === "delete") {
     const idx = list.findIndex((m) => m.id === payload.message.id);
     if (idx >= 0) list.splice(idx, 1);
   } else if (payload.action === "retry") {
     updateMessageInList(list, payload.message.id, { failed: false, sending: true });
-    window.setTimeout(() => {
-      updateMessageInList(list, payload.message.id, { sending: false });
-    }, 600);
+    simulateDeliveryPipeline(list, payload.message.id);
   }
 }
 
@@ -313,6 +348,13 @@ function onQuoteLocate(payload: { quotedId: string }): void {
 
 function onSessionMenuClick(payload: { action: string; session: VIMSessionItem }): void {
   console.info("[session-menu-click]", payload);
+  if (payload.action === "pin") {
+    const s = sessions.value.find((x) => x.id === payload.session.id);
+    if (s) {
+      s.pinned = !s.pinned;
+    }
+    return;
+  }
   if (payload.action === "delete") {
     sessions.value = sessions.value.filter((s) => s.id !== payload.session.id);
     if (activeSessionId.value === payload.session.id) {

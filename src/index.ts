@@ -7,6 +7,7 @@ export type {
   VIMInputFilesPayload,
   VIMMenuItem,
   VIMMessage,
+  VIMMessageDeliveryStatus,
   VIMMessageTypeMap,
   VIMMode,
   VIMQuoteRef,
@@ -16,5 +17,7 @@ export type {
   VIMSidebarMenuItem,
   VIMTheme
 } from "./types";
+
+export { sortSessionItems } from "./utils/sessionListModel";
 
 export { VersatileIM, VimDialog };

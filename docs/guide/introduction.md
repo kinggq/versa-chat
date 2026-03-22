@@ -18,7 +18,7 @@ npm install vue-versatile-im
 
 ```ts
 import { VersatileIM } from "vue-versatile-im";
-import "vue-versatile-im/dist/style.css";
+import "vue-versatile-im/style.css";
 ```
 
 ```vue

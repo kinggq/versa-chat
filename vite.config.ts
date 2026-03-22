@@ -10,7 +10,8 @@ export default defineConfig(({ mode }) => {
       plugins: [vue()],
       test: {
         environment: "jsdom",
-        include: ["tests/**/*.spec.ts"]
+        include: ["tests/**/*.spec.ts"],
+        setupFiles: [resolve(__dirname, "vitest.setup.ts")]
       }
     };
   }
@@ -35,7 +36,8 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: "jsdom",
-      include: ["tests/**/*.spec.ts"]
+      include: ["tests/**/*.spec.ts"],
+      setupFiles: [resolve(__dirname, "vitest.setup.ts")]
     }
   };
 });

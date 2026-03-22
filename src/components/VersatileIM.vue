@@ -82,7 +82,7 @@
         </template>
       </MessageList>
 
-        <div v-if="typing" class="vim-typing-indicator">对方正在输入...</div>
+        <div v-if="typing" class="vim-typing-indicator">{{ typingText }}</div>
         <IMInput
           :show-image-button="resolvedConfig.showImageButton"
           :placeholder="resolvedConfig.inputPlaceholder"
@@ -171,6 +171,10 @@ const props = withDefaults(
 );
 
 const emptyText = computed(() => props.config?.emptyText ?? "暂无消息，发一条试试吧");
+
+const typingText = computed(
+  () => props.config?.typingText ?? "对方正在输入..."
+);
 
 const sessionSearchPlaceholder = computed(
   () => props.config?.sessionSearchPlaceholder ?? props.sessionSearchPlaceholder

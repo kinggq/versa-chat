@@ -22,18 +22,39 @@
       <span v-if="sending" class="vim-status vim-status-sending">发送中…</span>
       <span v-if="failed" class="vim-status vim-status-failed">发送失败</span>
     </div>
+    <div
+      v-else-if="isSelf && deliveryStatus"
+      class="vim-delivery-status"
+      :title="deliveryTitle"
+      aria-hidden="true"
+    >
+      <span v-if="deliveryStatus === 'sent'" class="vim-delivery-icon">✓</span>
+      <span v-else-if="deliveryStatus === 'delivered'" class="vim-delivery-icon">✓✓</span>
+      <span v-else class="vim-delivery-icon vim-delivery-read">✓✓</span>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { VIMQuoteRef } from "../types";
+import { computed } from "vue";
+import type { VIMMessageDeliveryStatus, VIMQuoteRef } from "../types";
 
-defineProps<{
+const props = defineProps<{
   isSelf?: boolean;
   quote?: VIMQuoteRef;
   sending?: boolean;
   failed?: boolean;
+  deliveryStatus?: VIMMessageDeliveryStatus;
 }>();
+
+const deliveryTitle = computed(() => {
+  const map: Record<VIMMessageDeliveryStatus, string> = {
+    sent: "已发送",
+    delivered: "已送达",
+    read: "已读"
+  };
+  return props.deliveryStatus ? map[props.deliveryStatus] : "";
+});
 
 defineEmits<{
   (event: "quote-click", quote: VIMQuoteRef): void;
@@ -107,5 +128,20 @@ defineEmits<{
 
 .vim-status-failed {
   color: var(--vim-status-failed);
+}
+
+.vim-delivery-status {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.vim-delivery-icon {
+  color: var(--vim-delivery-sent, #8b8b8b);
+}
+
+.vim-delivery-read {
+  color: var(--vim-delivery-read, #34b7f1);
 }
 </style>

@@ -46,6 +46,7 @@ Session/contact list component. Shows avatar, title, subtitle, unread count. Sup
 |-------|------|--------------|------|
 | `lastMessageTime` | `number` | Timestamp for sorting (latest on top) | 最后消息时间，用于排序 |
 | `unread` | `number` | Unread count. **Clear on select** in parent | 未读数，选中后由使用者清零 |
+| `pinned` | `boolean` | Pin to top of list (within pinned group, still sorted by `lastMessageTime`) | 置顶，列表最前并显示 📌 |
 
 ## 使用者需自行实现 | Implement in Your App
 

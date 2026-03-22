@@ -33,7 +33,10 @@
           <span v-if="item.unread && item.unread > 0" class="vim-unread">{{ formatUnread(item.unread) }}</span>
         </div>
         <div class="meta">
-          <div class="title">{{ item.title }}</div>
+          <div class="title">
+            <span v-if="item.pinned" class="vim-session-pin" title="置顶" aria-label="置顶">📌</span>
+            {{ item.title }}
+          </div>
           <div class="subtitle">{{ item.subtitle }}</div>
         </div>
         <div class="session-item-right">
@@ -80,6 +83,7 @@
 import { Teleport, computed, ref } from "vue";
 import VimAvatar from "./VimAvatar.vue";
 import type { VIMSessionItem, VIMSessionMenuItem } from "../types";
+import { sortSessionItems } from "../utils/sessionListModel";
 
 const WEEKDAYS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
@@ -172,22 +176,9 @@ function onMenuSelect(action: string): void {
   closeMenu();
 }
 
-const sortedList = computed(() => {
-  let items = props.list;
-  if (props.sortByLatest) {
-    items = [...items].sort((a, b) => {
-      const ta = a.lastMessageTime ?? 0;
-      const tb = b.lastMessageTime ?? 0;
-      return tb - ta;
-    });
-  }
-  const q = (props.searchQuery ?? "").trim().toLowerCase();
-  if (!q) return items;
-  return items.filter(
-    (s) =>
-      (s.title ?? "").toLowerCase().includes(q) || (s.subtitle ?? "").toLowerCase().includes(q)
-  );
-});
+const sortedList = computed(() =>
+  sortSessionItems(props.list, props.sortByLatest, props.searchQuery ?? "")
+);
 
 function formatUnread(n: number): string {
   return n > 99 ? "99+" : String(n);

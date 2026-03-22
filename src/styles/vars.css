@@ -18,4 +18,6 @@
   --vim-menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   --vim-status-sending: #8b8b8b;
   --vim-status-failed: #ff4d4f;
+  --vim-delivery-sent: #8b8b8b;
+  --vim-delivery-read: #34b7f1;
 }

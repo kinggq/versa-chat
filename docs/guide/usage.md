@@ -84,3 +84,16 @@ const draftBySession = reactive<Record<string, string>>({});
 ```
 
 引用回复：右键消息选择「引用回复」，`@menu-click` 收到 `action: "quote"` 时设置 `replyingTo = message`；发送时 `payload.quote` 含引用信息。
+
+## 送达状态与置顶
+
+```ts
+// 发送成功后由服务端回执更新 deliveryStatus
+updateMessageInList(list, id, { sending: false, deliveryStatus: "sent" });
+// 可选：再更新为 delivered / read
+
+// 会话置顶
+session.pinned = true;
+```
+
+转发：右键消息「转发」→ `@menu-click` 中 `action === "forward"`。

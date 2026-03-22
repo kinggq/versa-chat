@@ -32,6 +32,7 @@
           :quote="msg.quote"
           :sending="msg.sending"
           :failed="msg.failed"
+          :delivery-status="msg.deliveryStatus"
           @quote-click="onQuoteClick"
           @contextmenu="openMenu($event, msg)"
         >
@@ -77,6 +78,7 @@
           :quote="msg.quote"
           :sending="msg.sending"
           :failed="msg.failed"
+          :delivery-status="msg.deliveryStatus"
           @quote-click="onQuoteClick"
           @contextmenu="openMenu($event, msg)"
         >
@@ -262,6 +264,7 @@ function defaultMenuItemsFor(message: VIMMessage): VIMMenuItem[] {
   return [
     { key: "copy", label: "复制", visible: () => canCopyMessage(message) },
     { key: "quote", label: "引用回复", visible: () => true },
+    { key: "forward", label: "转发", visible: () => true },
     {
       key: "recall",
       label: "撤回",

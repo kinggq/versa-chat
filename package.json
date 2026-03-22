@@ -1,18 +1,52 @@
 {
   "name": "vue-versatile-im",
   "version": "0.1.0",
-  "private": true,
-  "type": "module",
   "description": "A lightweight, zero-dependency, customizable IM UI library for Vue 3",
-  "main": "dist/vue-versatile-im.umd.cjs",
-  "module": "dist/vue-versatile-im.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/vue-versatile-im.umd.cjs",
+  "module": "./dist/vue-versatile-im.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/vue-versatile-im.js",
+      "require": "./dist/vue-versatile-im.umd.cjs"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "sideEffects": [
+    "**/*.css",
+    "./dist/style.css"
   ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "keywords": [
+    "vue",
+    "vue3",
+    "im",
+    "chat",
+    "messaging",
+    "ui",
+    "component",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kinggq/versa-chat.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kinggq/versa-chat/issues"
+  },
+  "homepage": "https://github.com/kinggq/versa-chat#readme",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -p tsconfig.build.json && BUILD_LIB=true vite build",
+    "build": "BUILD_LIB=true vite build && vue-tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build && npm test",
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
     "playground": "vite --open",

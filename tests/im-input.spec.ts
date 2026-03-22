@@ -63,16 +63,17 @@ describe("IMInput", () => {
   });
 
   it("emits send on Ctrl+Enter", async () => {
-    const wrapper = mount(IMInput);
+    const wrapper = mount(IMInput, {
+      props: { modelValue: "  hello  " }
+    });
     const textarea = wrapper.find("textarea");
-    await textarea.setValue("  hello  ");
 
     await textarea.trigger("keydown", {
       key: "Enter",
       ctrlKey: true
     });
 
-    expect(wrapper.emitted("send")?.[0]).toEqual(["hello"]);
-    expect((textarea.element as HTMLTextAreaElement).value).toBe("");
+    expect(wrapper.emitted("send")?.[0]).toEqual([{ text: "hello" }]);
+    expect(wrapper.emitted("update:modelValue")?.at(-1)?.[0]).toBe("");
   });
 });

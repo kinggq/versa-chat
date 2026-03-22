@@ -27,7 +27,7 @@ import DemoVersatileIM from './demo/DemoVersatileIM.vue'
 | `sessionSearchPlaceholder` | `string` | `"搜索"` | Session list search placeholder | 会话列表搜索框占位符 |
 | `sessionSearchQuery` | `string` | `""` | Session list search query (use `v-model:session-search-query`) | 会话列表搜索关键词 |
 | `activeSidebarKey` | `string` | `""` | Active sidebar menu key (use `v-model:active-sidebar-key`) | 当前选中的侧边栏菜单 |
-| `typing` | `boolean` | `false` | Show "对方正在输入..." above input | 对方输入中 |
+| `typing` | `boolean` | `false` | Show typing indicator (`config.typingText`) | 对方输入中 |
 | `draft` | `string` | - | Input draft (use `v-model:draft` for per-session draft) | 输入草稿，可配合 v-model:draft 按会话保存 |
 | `replyingTo` | `VIMMessage \| null` | - | Reply target (use `v-model:replying-to`) | 引用回复目标消息 |
 
@@ -39,6 +39,7 @@ import DemoVersatileIM from './demo/DemoVersatileIM.vue'
 | `sidebarMenuBottomItems` | `VIMSidebarMenuItem[]` | Bottom menu (e.g. settings) | 左侧边栏底部菜单（设置等） |
 | `mainPaneKeys` | `string[]` | `[]` | Menu keys that show main-pane slot (e.g. `["me"]`) | 使用 main-pane 插槽的菜单 |
 | `inputPlaceholder` | `string` | - | Input placeholder | 输入框占位文案 |
+| `typingText` | `string` | - | Typing indicator copy when `typing` is true | 「对方正在输入」文案 |
 
 `VIMSidebarMenuItem`: `{ key, label, icon?, badge? }`
 
@@ -59,7 +60,7 @@ import DemoVersatileIM from './demo/DemoVersatileIM.vue'
 | `send` | `VIMSendPayload` | Send text (`{ text, quote? }`). `quote` for reply | 发送文本，支持引用回复 |
 | `pull-history` | - | Load history on scroll top | 加载历史 |
 | `click-avatar` | `message` | Avatar clicked | 点击头像 |
-| `menu-click` | `{ action, message }` | Context menu | 右键菜单 |
+| `menu-click` | `{ action, message }` | `copy` / `quote` / `forward` / `recall` / `retry` / `delete` | 右键菜单 |
 | `quote-locate` | `{ quotedId, message? }` | Quote bar clicked | 引用定位 |
 | `input-files` | `{ files, source }` | Paste or drop files | 粘贴/拖拽文件 |
 | `select-session` | `id: string` | Switch session | 切换会话 |
@@ -116,3 +117,13 @@ const currentMessages = computed(() => messagesBySession.value[activeSessionId.v
 
 - 使用 `v-model:draft` 可实现按会话保存草稿
 - 父组件维护 `draftBySession: Record<string, string>`，切换会话时自动切换草稿
+
+## 消息送达状态 | Delivery status
+
+- 己方消息在 `sending` / `failed` 之外可设置 `deliveryStatus`: `'sent'` | `'delivered'` | `'read'`
+- 气泡下方显示 ✓ / ✓✓ / 蓝色 ✓✓（已读），由业务在接口返回后更新
+
+## 会话置顶 | Pinned sessions
+
+- `VIMSessionItem.pinned === true` 时会话固定列表最前，组内仍按 `lastMessageTime` 排序
+- 标题前显示 📌，默认菜单含「置顶聊天」（`action: pin`）

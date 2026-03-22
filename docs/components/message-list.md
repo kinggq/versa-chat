@@ -2,7 +2,7 @@
 
 Message list component. Supports timeline (timestamp every 5+ min), quote reply, send status, context menu (copy/recall/delete).
 
-消息列表组件。支持时间线、引用回复、发送状态、右键菜单（复制/撤回/删除）。
+消息列表组件。支持时间线、引用回复、发送中/失败、己方送达状态（`deliveryStatus`）、右键菜单（复制/引用/转发/撤回/重试/删除）。
 
 ## Props
 
@@ -24,3 +24,10 @@ Message list component. Supports timeline (timestamp every 5+ min), quote reply,
 | `click-avatar` | `message` | Avatar clicked | 点击头像 |
 | `menu-click` | `{ action, message }` | Menu item clicked | 菜单项点击 |
 | `quote-locate` | `{ quotedId, message? }` | Quote bar clicked | 引用定位 |
+
+## VIMMessage (relevant fields)
+
+| Field | Type | Description | 说明 |
+|-------|------|-------------|------|
+| `deliveryStatus` | `'sent' \| 'delivered' \| 'read'` | Self messages, after success | 送达/已读，显示在气泡下方 |
+| `sending` / `failed` | `boolean` | Sending spinner / retry | 发送中 / 失败 |

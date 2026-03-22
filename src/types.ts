@@ -21,7 +21,12 @@ export interface VIMSessionItem {
   unread?: number;
   /** 最后一条消息时间戳，用于排序（最新在顶） */
   lastMessageTime?: number;
+  /** 置顶：置顶会话在列表最前（仍按 lastMessageTime 在置顶组内排序） */
+  pinned?: boolean;
 }
+
+/** 己方消息送达状态（仅对 sender === "self" 且已发送成功时展示） */
+export type VIMMessageDeliveryStatus = "sent" | "delivered" | "read";
 
 /** 引用回复：指向被引用的消息 id，可选预览文案 */
 export interface VIMQuoteRef {
@@ -39,6 +44,8 @@ export interface VIMMessage {
   avatar?: string;
   sending?: boolean;
   failed?: boolean;
+  /** 己方消息送达/已读（业务层在发送成功后更新） */
+  deliveryStatus?: VIMMessageDeliveryStatus;
   /** 引用某条消息（点击引用条可触发定位） */
   quote?: VIMQuoteRef;
 }
@@ -75,6 +82,8 @@ export interface VIMConfig {
   showImageButton?: boolean;
   /** 输入框 placeholder */
   inputPlaceholder?: string;
+  /** 「对方正在输入」提示文案 */
+  typingText?: string;
   /** 消息数超过此值时启用虚拟滚动，0 表示禁用。默认 100 */
   virtualScrollThreshold?: number;
   /** 虚拟滚动时预估行高 (px)。默认 88 */
